@@ -27,3 +27,4 @@ console:
 	url: http://dkim.sunfox.cz
 	commands:
 		- App\Console\DKIM\FetchAndProcessReportsCommand
+		- App\Console\MigrateMailboxesCommand

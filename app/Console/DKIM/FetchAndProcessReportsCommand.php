@@ -18,8 +18,7 @@ class FetchAndProcessReportsCommand extends Command
 {
 	protected static $defaultName = 'dkim:fetchAndProcessReports';
 
-	/** @var OutputInterface */
-	private $output;
+	private OutputInterface $output;
 
 	public function __construct(
 		private DKIMConfig $config,
@@ -52,9 +51,6 @@ class FetchAndProcessReportsCommand extends Command
 		return 0;
 	}
 
-	/**
-	 * @param Message $message
-	 */
 	private function processMessage(Message $message)
 	{
 		$attachments = $message->getAttachments();
@@ -69,9 +65,6 @@ class FetchAndProcessReportsCommand extends Command
 		}
 	}
 
-	/**
-	 * @param Message\Attachment $attachment
-	 */
 	private function processAttachment(Message\Attachment $attachment)
 	{
 		if ($attachment->getSubtype() !== 'ZIP') {
@@ -94,13 +87,7 @@ class FetchAndProcessReportsCommand extends Command
 		}
 	}
 
-	/**
-	 * @param SimpleXMLElement $record
-	 * @param DateTime         $begin
-	 * @param DateTime         $end
-	 * @param string           $reporter
-	 */
-	private function processRecord(SimpleXMLElement $record, DateTime $begin, DateTime $end, $reporter)
+	private function processRecord(SimpleXMLElement $record, DateTime $begin, DateTime $end, string $reporter)
 	{
 		$spfResult = $record->auth_results->spf->result;
 		$dkimResult = $record->auth_results->dkim->result;

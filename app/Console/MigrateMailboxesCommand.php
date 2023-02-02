@@ -16,14 +16,9 @@ class MigrateMailboxesCommand extends Command
 {
 	protected static $defaultName = 'migrateMailboxes';
 
-	/** @var InputInterface */
-	private $output;
-
-	/** @var Server */
-	private $sourceServer;
-
-	/** @var Server */
-	private $destinationServer;
+	private InputInterface $output;
+	private Server $sourceServer;
+	private Server $destinationServer;
 
 	public function __construct(
 		private MigrateConfig $config,
@@ -79,7 +74,7 @@ class MigrateMailboxesCommand extends Command
 	}
 
 	private function processMailboxFolder(
-		$folder,
+		string $folder,
 		\IMAP\Connection $sourceResource,
 		Mailbox $sourceMbox,
 		Mailbox $destinationMbox

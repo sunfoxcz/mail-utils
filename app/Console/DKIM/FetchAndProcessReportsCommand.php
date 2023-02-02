@@ -46,7 +46,7 @@ class FetchAndProcessReportsCommand extends Command
             $this->processMessage($message);
         }
 
-        $mailbox->expunge();
+        $connection->expunge();
 
         return 0;
     }

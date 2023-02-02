@@ -1,25 +1,25 @@
 parameters:
-	dkim:
-		mbox:
-			host:
-			user:
-			password:
-			deleteProcessed: TRUE
-	migrate:
-		server:
-			source: mail.server1.tld
-			destination: mail.server2.tld
-		mailboxes:
-			mail1@domain1.tld:
-				login: mail1@domain.tld
-				pass: xxx
-			mail2@domain1.tld:
-				login: mail2@domain.tld
-				pass: xxx
+    dkim:
+        mbox:
+            host:
+            user:
+            password:
+            deleteProcessed: TRUE
+    migrate:
+        server:
+            source: mail.server1.tld
+            destination: mail.server2.tld
+        mailboxes:
+            mail1@domain1.tld:
+                login: mail1@domain.tld
+                pass: xxx
+            mail2@domain1.tld:
+                login: mail2@domain.tld
+                pass: xxx
 
 database:
-	dsn: 'mysql:host=127.0.0.1;dbname=test'
-	user:
-	password:
-	options:
-		lazy: yes
+    dsn: 'mysql:host=127.0.0.1;dbname=test'
+    user:
+    password:
+    options:
+        lazy: yes

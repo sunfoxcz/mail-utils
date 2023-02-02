@@ -9,12 +9,12 @@ use Nette\Utils\ArrayHash;
  */
 abstract class AbstractConfig extends ArrayHash
 {
-	public function __construct(array $arr)
-	{
-		foreach ($arr as $key => $value) {
-			$this->$key = is_array($value)
-				? ArrayHash::from($value, true)
-				: $value;
-		}
-	}
+    public function __construct(array $arr)
+    {
+        foreach ($arr as $key => $value) {
+            $this->$key = is_array($value)
+                ? ArrayHash::from($value, true)
+                : $value;
+        }
+    }
 }

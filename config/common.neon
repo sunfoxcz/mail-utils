@@ -5,31 +5,31 @@
 parameters:
 
 php:
-	date.timezone: Europe/Prague
+    date.timezone: Europe/Prague
 
 application:
-	scanDirs: false
-	errorPresenter: Error
-	mapping:
-		*: App\*Module\Presenters\*Presenter
+    scanDirs: false
+    errorPresenter: Error
+    mapping:
+        *: App\*Module\Presenters\*Presenter
 
 session:
-	expiration: 14 days
+    expiration: 14 days
 
 extensions:
-	events: Contributte\EventDispatcher\DI\EventDispatcherExtension
-	console: Contributte\Console\DI\ConsoleExtension(%consoleMode%)
+    events: Contributte\EventDispatcher\DI\EventDispatcherExtension
+    console: Contributte\Console\DI\ConsoleExtension(%consoleMode%)
 
 console:
-	url: http://dkim.sunfox.cz
-	name: Sunfox Billing
-	version: 1.0
-	lazy: true
+    url: http://dkim.sunfox.cz
+    name: Sunfox Billing
+    version: 1.0
+    lazy: true
 
 services:
-	- App\Console\DKIM\FetchAndProcessReportsCommand
-	- App\Console\MigrateMailboxesCommand
-	- App\Libs\Config\DKIMConfig( %dkim% )
-	- App\Libs\Config\MigrateConfig( %migrate% )
-	- App\Libs\Logging\ConsoleHandler
-	- App\Libs\Logging\ConsoleLogger
+    - App\Console\DKIM\FetchAndProcessReportsCommand
+    - App\Console\MigrateMailboxesCommand
+    - App\Libs\Config\DKIMConfig( %dkim% )
+    - App\Libs\Config\MigrateConfig( %migrate% )
+    - App\Libs\Logging\ConsoleHandler
+    - App\Libs\Logging\ConsoleLogger

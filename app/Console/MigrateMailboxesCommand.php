@@ -15,128 +15,127 @@ use Ddeboer\Imap\Server;
 
 class MigrateMailboxesCommand extends Command
 {
-	protected static $defaultName = 'migrateMailboxes';
+    protected static $defaultName = 'migrateMailboxes';
 
-	private Server $sourceServer;
-	private Server $destinationServer;
+    private Server $sourceServer;
+    private Server $destinationServer;
 
-	public function __construct(
-		private ConsoleLogger $logger,
-		private MigrateConfig $config,
-	) {
-		parent::__construct();
-	}
+    public function __construct(
+        private ConsoleLogger $logger,
+        private MigrateConfig $config,
+    ) {
+        parent::__construct();
+    }
 
-	protected function configure()
-	{
-		$this->setName(self::$defaultName)
-			->setDescription('Migrates mailboxes from one server to another.');
-	}
+    protected function configure()
+    {
+        $this->setName(self::$defaultName)
+            ->setDescription('Migrates mailboxes from one server to another.');
+    }
 
-	protected function execute(InputInterface $input, OutputInterface $output): int
-	{
-		$this->sourceServer = new Server($this->config->server['source']);
-		$this->destinationServer = new Server($this->config->server['destination']);
+    protected function execute(InputInterface $input, OutputInterface $output): int
+    {
+        $this->sourceServer = new Server($this->config->server['source']);
+        $this->destinationServer = new Server($this->config->server['destination']);
 
-		foreach ($this->config->mailboxes as $address => $settings)
-		{
-			$this->logger->info('Processing mailbox {address}', ['address' => $address]);
-			$this->processMailbox($settings);
-		}
+        foreach ($this->config->mailboxes as $address => $settings)
+        {
+            $this->logger->info('Processing mailbox {address}', ['address' => $address]);
+            $this->processMailbox($settings);
+        }
 
-		return 0;
-	}
+        return 0;
+    }
 
-	private function processMailbox(ArrayHash $settings)
-	{
-		$sourceConnection = $this->sourceServer->authenticate(
-			$settings['login'], $settings['pass']
-		);
+    private function processMailbox(ArrayHash $settings): void
+    {
+        $sourceConnection = $this->sourceServer->authenticate(
+            $settings['login'], $settings['pass']
+        );
 
-		$destinationConnection = $this->destinationServer->authenticate(
-			$settings['login'], $settings['pass']
-		);
+        $destinationConnection = $this->destinationServer->authenticate(
+            $settings['login'], $settings['pass']
+        );
 
-		$sourceFolders = $this->getMailboxFolders($sourceConnection);
-		$this->createDestinationFolders(array_keys($sourceFolders), $destinationConnection);
+        $sourceFolders = $this->getMailboxFolders($sourceConnection);
+        $this->createDestinationFolders(array_keys($sourceFolders), $destinationConnection);
 
-		foreach ($sourceFolders as $sourceMbox) {
-			$folder = Strings::toAscii(mb_convert_encoding($sourceMbox->getName(), "UTF-8", "UTF7-IMAP"));
-			$destinationMbox = $destinationConnection->getMailbox($folder);
+        foreach ($sourceFolders as $sourceMbox) {
+            $folder = Strings::toAscii(mb_convert_encoding($sourceMbox->getName(), "UTF-8", "UTF7-IMAP"));
+            $destinationMbox = $destinationConnection->getMailbox($folder);
 
-			$this->processMailboxFolder(
-				$folder,
-				$sourceConnection->getResource()->getStream(),
-				$sourceMbox,
-				$destinationMbox
-			);
-		}
-	}
+            $this->processMailboxFolder(
+                $folder,
+                $sourceConnection->getResource()->getStream(),
+                $sourceMbox,
+                $destinationMbox
+            );
+        }
+    }
 
-	private function processMailboxFolder(
-		string $folder,
-		\IMAP\Connection $sourceResource,
-		Mailbox $sourceMbox,
-		Mailbox $destinationMbox
-	) {
-		// Select proper mbox
-		$count = $sourceMbox->count();
+    private function processMailboxFolder(
+        string $folder,
+        \IMAP\Connection $sourceResource,
+        Mailbox $sourceMbox,
+        Mailbox $destinationMbox
+    ): void {
+        // Select proper mbox
+        $count = $sourceMbox->count();
 
-		$this->output->write("[{$folder}] Transfering {$count} messages.");
+        $this->output->write("[{$folder}] Transfering {$count} messages.");
 
-		$i = 0;
-		$messageNumbers = imap_search($sourceResource, 'ALL', \SE_UID);
-		if ($messageNumbers) {
-			foreach ($messageNumbers as $number) {
-				$info = imap_fetch_overview($sourceResource, $number, \FT_UID);
-				$header = imap_fetchheader($sourceResource, $number, \FT_UID);
-				$body = imap_body($sourceResource, $number, \FT_UID | \FT_PEEK);
+        $i = 0;
+        $messageNumbers = imap_search($sourceResource, 'ALL', \SE_UID);
+        if ($messageNumbers) {
+            foreach ($messageNumbers as $number) {
+                $info = imap_fetch_overview($sourceResource, $number, \FT_UID);
+                $header = imap_fetchheader($sourceResource, $number, \FT_UID);
+                $body = imap_body($sourceResource, $number, \FT_UID | \FT_PEEK);
 
-				$destinationMbox->addMessage($header."\r\n".$body);
+                $destinationMbox->addMessage($header."\r\n".$body);
 
-				if ($info[0]->seen) {
-					imap_setflag_full($sourceResource, $number, '\\SEEN');
-				}
+                if ($info[0]->seen) {
+                    imap_setflag_full($sourceResource, $number, '\\SEEN');
+                }
 
-				imap_delete($sourceResource, $number, \FT_UID);
+                imap_delete($sourceResource, $number, \FT_UID);
 
-				$i++;
-				$this->output->write("\r[{$folder}] Transfered {$i} out of {$count} messages.");
-			}
-		}
+                $i++;
+                $this->output->write("\r[{$folder}] Transfered {$i} out of {$count} messages.");
+            }
+        }
 
-		$this->logger->info("\r[{folder}] Transfered {current} out of {total} messages.", [
-			'folder' => $folder,
-			'current' => $i,
-			'total' => $count,
-		]);
-		$sourceMbox->expunge();
-	}
+        $this->logger->info("\r[{folder}] Transfered {current} out of {total} messages.", [
+            'folder' => $folder,
+            'current' => $i,
+            'total' => $count,
+        ]);
+        $sourceMbox->expunge();
+    }
 
-	private function createDestinationFolders(array $folderList, Connection $destinationConnection)
-	{
-		$destinationFolders = array_keys($this->getMailboxFolders($destinationConnection));
+    private function createDestinationFolders(array $folderList, Connection $destinationConnection): void
+    {
+        $destinationFolders = array_keys($this->getMailboxFolders($destinationConnection));
 
-		foreach ($folderList as $folder) {
-			$folder = Strings::toAscii(mb_convert_encoding($folder, "UTF-8", "UTF7-IMAP"));
+        foreach ($folderList as $folder) {
+            $folder = Strings::toAscii(mb_convert_encoding($folder, "UTF-8", "UTF7-IMAP"));
 
-			if (!in_array($folder, $destinationFolders)) {
-				$destinationConnection->createMailbox($folder);
-				$this->logger->info("Created folder {folder}", ['folder' => $folder]);
-			}
-		}
-	}
+            if (!in_array($folder, $destinationFolders)) {
+                $destinationConnection->createMailbox($folder);
+                $this->logger->info("Created folder {folder}", ['folder' => $folder]);
+            }
+        }
+    }
 
-	private function getMailboxFolders(Connection $connection)
-	{
-		$folderList = [];
+    private function getMailboxFolders(Connection $connection): array
+    {
+        $folderList = [];
 
-		$folders = $connection->getMailboxes();
-		foreach ($folders as $folder) {
-			$folderList[$folder->getName()] = $folder;
-		}
+        $folders = $connection->getMailboxes();
+        foreach ($folders as $folder) {
+            $folderList[$folder->getName()] = $folder;
+        }
 
-		return $folderList;
-	}
-
+        return $folderList;
+    }
 }

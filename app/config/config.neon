@@ -8,6 +8,7 @@ php:
 	date.timezone: Europe/Prague
 
 application:
+	scanDirs: false
 	errorPresenter: Error
 	mapping:
 		*: App\*Module\Presenters\*Presenter
@@ -17,11 +18,6 @@ session:
 
 extensions:
 	console: Kdyby\Console\DI\ConsoleExtension
-
-services:
-	- App\Model\UserManager
-	- App\Forms\SignFormFactory
-	router: App\RouterFactory::createRouter
 
 console:
 	url: http://dkim.sunfox.cz

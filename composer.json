@@ -10,14 +10,19 @@
 			"homepage": "http://tomasjacik.cz"
 		}
 	],
+	"minimum-stability": "beta",
+	"prefer-stable": true,
 	"require": {
 		"php": ">= 5.3.7",
 		"nette/nette": "~2.3.0",
 		"kdyby/console": "~2.3.0",
 		"ddeboer/imap": "~0.5.0"
 	},
-	"minimum-stability": "beta",
-	"prefer-stable": true,
+	"autoload": {
+		"psr-4": {
+			"App\\": "app"
+		}
+	},
 	"extra": {
 		"branch-alias": {
 			"dev-master": "2.3-dev"

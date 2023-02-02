@@ -5,6 +5,7 @@ namespace App\Console;
 use App\Libs\Config\MigrateConfig;
 use App\Libs\Logging\ConsoleLogger;
 use Ddeboer\Imap\Connection;
+use Ddeboer\Imap\ImapResource;
 use Ddeboer\Imap\Mailbox;
 use Nette\Utils\ArrayHash;
 use Nette\Utils\Strings;
@@ -50,76 +51,83 @@ class MigrateMailboxesCommand extends Command
     private function processMailbox(ArrayHash $settings): void
     {
         $sourceConnection = $this->sourceServer->authenticate(
-            $settings['login'], $settings['pass']
+            $settings['source']['login'], $settings['source']['pass']
         );
 
         $destinationConnection = $this->destinationServer->authenticate(
-            $settings['login'], $settings['pass']
+            $settings['destination']['login'], $settings['destination']['pass']
         );
 
-        $sourceFolders = $this->getMailboxFolders($sourceConnection);
-        $this->createDestinationFolders(array_keys($sourceFolders), $destinationConnection);
+        $sourceMailboxes = $sourceConnection->getMailboxes();
+        $this->createDestinationFolders($sourceMailboxes, $destinationConnection);
 
-        foreach ($sourceFolders as $sourceMbox) {
-            $folder = Strings::toAscii(mb_convert_encoding($sourceMbox->getName(), "UTF-8", "UTF7-IMAP"));
-            $destinationMbox = $destinationConnection->getMailbox($folder);
+        foreach ($sourceMailboxes as $sourceMbox) {
+            if ($sourceMbox->getAttributes() & \LATT_NOSELECT) {
+                continue;
+            }
 
-            $this->processMailboxFolder(
-                $folder,
-                $sourceConnection->getResource()->getStream(),
-                $sourceMbox,
-                $destinationMbox
-            );
+            $destinationMbox = $destinationConnection->getMailbox($this->normalizeName($sourceMbox->getName()));
+            $this->processMailboxFolder($sourceConnection, $sourceMbox, $destinationMbox);
         }
     }
 
     private function processMailboxFolder(
-        string $folder,
-        \IMAP\Connection $sourceResource,
+        Connection $sourceConnection,
         Mailbox $sourceMbox,
         Mailbox $destinationMbox
     ): void {
-        // Select proper mbox
         $count = $sourceMbox->count();
+        $imapConnection = $sourceConnection->getResource()->getStream();
 
-        $this->output->write("[{$folder}] Transfering {$count} messages.");
+        $this->logger->info('[{folder}] Transferind {number} messages.', [
+            'folder' => $sourceMbox->getName(),
+            'number' => $count,
+        ]);
 
         $i = 0;
-        $messageNumbers = imap_search($sourceResource, 'ALL', \SE_UID);
+        $messageNumbers = imap_search($imapConnection, 'ALL', \SE_UID);
         if ($messageNumbers) {
             foreach ($messageNumbers as $number) {
-                $info = imap_fetch_overview($sourceResource, $number, \FT_UID);
-                $header = imap_fetchheader($sourceResource, $number, \FT_UID);
-                $body = imap_body($sourceResource, $number, \FT_UID | \FT_PEEK);
+                $info = imap_fetch_overview($imapConnection, (string) $number, \FT_UID);
+                $header = imap_fetchheader($imapConnection, $number, \FT_UID);
+                $body = imap_body($imapConnection, $number, \FT_UID | \FT_PEEK);
 
-                $destinationMbox->addMessage($header."\r\n".$body);
+                $destinationMbox->addMessage($header . "\r\n" . $body);
 
                 if ($info[0]->seen) {
-                    imap_setflag_full($sourceResource, $number, '\\SEEN');
+                    imap_setflag_full($imapConnection, $number, '\\SEEN');
                 }
 
-                imap_delete($sourceResource, $number, \FT_UID);
+                imap_delete($imapConnection, $number, \FT_UID);
 
                 $i++;
-                $this->output->write("\r[{$folder}] Transfered {$i} out of {$count} messages.");
+                $this->logger->info("\r[{folder}] Transfered {current} out of {total} messages.", [
+                    'folder' => $sourceMbox->getName(),
+                    'current' => $i,
+                    'total' => $count,
+                ]);
             }
         }
 
         $this->logger->info("\r[{folder}] Transfered {current} out of {total} messages.", [
-            'folder' => $folder,
+            'folder' => $sourceMbox->getName(),
             'current' => $i,
             'total' => $count,
         ]);
-        $sourceMbox->expunge();
+        $sourceConnection->expunge();
     }
 
-    private function createDestinationFolders(array $folderList, Connection $destinationConnection): void
+    /**
+     * @param Mailbox[] $sourceMailboxes
+     * @param Connection $destinationConnection
+     * @return void
+     */
+    private function createDestinationFolders(array $sourceMailboxes, Connection $destinationConnection): void
     {
-        $destinationFolders = array_keys($this->getMailboxFolders($destinationConnection));
+        $destinationFolders = array_keys($destinationConnection->getMailboxes());
 
-        foreach ($folderList as $folder) {
-            $folder = Strings::toAscii(mb_convert_encoding($folder, "UTF-8", "UTF7-IMAP"));
-
+        foreach (array_keys($sourceMailboxes) as $folder) {
+            $folder = $this->normalizeName($folder);
             if (!in_array($folder, $destinationFolders)) {
                 $destinationConnection->createMailbox($folder);
                 $this->logger->info("Created folder {folder}", ['folder' => $folder]);
@@ -127,15 +135,18 @@ class MigrateMailboxesCommand extends Command
         }
     }
 
-    private function getMailboxFolders(Connection $connection): array
+    private function normalizeName(string $folder): string
     {
-        $folderList = [];
+        //$folder = Strings::toAscii(mb_convert_encoding($folder, "UTF-8", "UTF7-IMAP"));
 
-        $folders = $connection->getMailboxes();
-        foreach ($folders as $folder) {
-            $folderList[$folder->getName()] = $folder;
+        if (Strings::startsWith($folder, '[Gmail]/')) {
+            $folder = Strings::substring($folder, 8);
         }
 
-        return $folderList;
+        if ($folder !== 'INBOX' && !Strings::startsWith($folder, 'INBOX.')) {
+            $folder = 'INBOX.' . $folder;
+        }
+
+        return $folder;
     }
 }

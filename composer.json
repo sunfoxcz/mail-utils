@@ -27,6 +27,8 @@
 		"nette/utils": "^3.2",
 		"tracy/tracy": "^2.8",
 		"contributte/console": "^0.9",
+		"contributte/event-dispatcher": "^0.8",
+		"psr/log": "^1.1",
 		"ddeboer/imap": "^1.15"
 	},
 	"autoload": {

@@ -17,6 +17,7 @@ session:
 	expiration: 14 days
 
 extensions:
+	events: Contributte\EventDispatcher\DI\EventDispatcherExtension
 	console: Contributte\Console\DI\ConsoleExtension(%consoleMode%)
 
 console:
@@ -30,3 +31,5 @@ services:
 	- App\Console\MigrateMailboxesCommand
 	- App\Libs\Config\DKIMConfig( %dkim% )
 	- App\Libs\Config\MigrateConfig( %migrate% )
+	- App\Libs\Logging\ConsoleHandler
+	- App\Libs\Logging\ConsoleLogger

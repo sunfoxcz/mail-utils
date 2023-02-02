@@ -3,6 +3,7 @@
 namespace App\Console;
 
 use App\Libs\Config\MigrateConfig;
+use App\Libs\Logging\ConsoleLogger;
 use Ddeboer\Imap\Connection;
 use Ddeboer\Imap\Mailbox;
 use Nette\Utils\ArrayHash;
@@ -16,11 +17,11 @@ class MigrateMailboxesCommand extends Command
 {
 	protected static $defaultName = 'migrateMailboxes';
 
-	private InputInterface $output;
 	private Server $sourceServer;
 	private Server $destinationServer;
 
 	public function __construct(
+		private ConsoleLogger $logger,
 		private MigrateConfig $config,
 	) {
 		parent::__construct();
@@ -34,13 +35,12 @@ class MigrateMailboxesCommand extends Command
 
 	protected function execute(InputInterface $input, OutputInterface $output): int
 	{
-		$this->output = $output;
 		$this->sourceServer = new Server($this->config->server['source']);
 		$this->destinationServer = new Server($this->config->server['destination']);
 
 		foreach ($this->config->mailboxes as $address => $settings)
 		{
-			$this->output->writeLn("<comment>Processing mailbox {$address}:</comment>");
+			$this->logger->info('Processing mailbox {address}', ['address' => $address]);
 			$this->processMailbox($settings);
 		}
 
@@ -105,7 +105,11 @@ class MigrateMailboxesCommand extends Command
 			}
 		}
 
-		$this->output->writeLn("\r<info>[{$folder}] Transfered {$i} out of {$count} messages.</info>");
+		$this->logger->info("\r[{folder}] Transfered {current} out of {total} messages.", [
+			'folder' => $folder,
+			'current' => $i,
+			'total' => $count,
+		]);
 		$sourceMbox->expunge();
 	}
 
@@ -118,7 +122,7 @@ class MigrateMailboxesCommand extends Command
 
 			if (!in_array($folder, $destinationFolders)) {
 				$destinationConnection->createMailbox($folder);
-				$this->output->writeLn("Created folder {$folder}");
+				$this->logger->info("Created folder {folder}", ['folder' => $folder]);
 			}
 		}
 	}

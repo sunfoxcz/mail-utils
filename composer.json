@@ -1,5 +1,5 @@
 {
-	"name": "sunfoxcz/dkim-fetcher",
+	"name": "sunfoxcz/mail-utils",
 	"description": "Fetches DKIM reports from mailbox and send warnings abou important events.",
 	"homepage": "http://sunfox.cz",
 	"type": "project",
@@ -10,22 +10,28 @@
 			"homepage": "http://tomasjacik.cz"
 		}
 	],
-	"minimum-stability": "beta",
+	"minimum-stability": "dev",
 	"prefer-stable": true,
 	"require": {
-		"php": ">= 5.3.7",
-		"nette/nette": "~2.3.0",
-		"kdyby/console": "~2.3.0",
-		"ddeboer/imap": "~0.5.0"
+		"php": "~8.2.0",
+		"ext-imap": "*",
+		"ext-simplexml": "*",
+		"ext-zip": "*",
+		"nette/application": "^3.1",
+		"nette/bootstrap": "^3.1",
+		"nette/caching": "^3.1",
+		"nette/database": "^3.1",
+		"nette/di": "^3.0",
+		"nette/http": "^3.1",
+		"nette/security": "^3.1",
+		"nette/utils": "^3.2",
+		"tracy/tracy": "^2.8",
+		"contributte/console": "^0.9",
+		"ddeboer/imap": "^1.15"
 	},
 	"autoload": {
 		"psr-4": {
 			"App\\": "app"
-		}
-	},
-	"extra": {
-		"branch-alias": {
-			"dev-master": "2.3-dev"
 		}
 	}
 }

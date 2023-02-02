@@ -1,4 +1,9 @@
-#!/bin/bash
+#!/usr/bin/env php
+<?php declare(strict_types=1);
 
-DIR=`dirname ${BASH_SOURCE[0]}`
-php $DIR/../www/index.php --ansi $@
+require __DIR__ . '/../vendor/autoload.php';
+
+App\Bootstrap::boot()
+    ->createContainer()
+    ->getByType(Contributte\Console\Application::class)
+    ->run();

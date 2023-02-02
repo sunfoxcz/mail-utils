@@ -17,10 +17,16 @@ session:
 	expiration: 14 days
 
 extensions:
-	console: Kdyby\Console\DI\ConsoleExtension
+	console: Contributte\Console\DI\ConsoleExtension(%consoleMode%)
 
 console:
 	url: http://dkim.sunfox.cz
-	commands:
-		- App\Console\DKIM\FetchAndProcessReportsCommand
-		- App\Console\MigrateMailboxesCommand
+	name: Sunfox Billing
+	version: 1.0
+	lazy: true
+
+services:
+	- App\Console\DKIM\FetchAndProcessReportsCommand
+	- App\Console\MigrateMailboxesCommand
+	- App\Libs\Config\DKIMConfig( %dkim% )
+	- App\Libs\Config\MigrateConfig( %migrate% )

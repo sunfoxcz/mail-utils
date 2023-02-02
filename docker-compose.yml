@@ -1,0 +1,10 @@
+version: '3.8'
+services:
+  app:
+    container_name: mail-utils
+    image: sunfoxcz/php:8.2-cli
+    working_dir: /app
+    environment:
+      - NETTE_DEVEL=1
+    volumes:
+      - .:/app
